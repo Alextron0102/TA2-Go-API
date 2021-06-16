@@ -89,7 +89,7 @@ func convertThread(tuples [][]string, ch chan Recurso) {
 	}
 	close(ch)
 }
-func min(a, b int) int {
+func Min(a, b int) int {
 	if a <= b {
 		return a
 	}
@@ -106,7 +106,7 @@ func LoadRecursos() []Recurso {
 	fmt.Println(len(data))
 	iteratoraux := 0
 	for i := 0; i < len(data); i += limit {
-		chunk := data[i:min(i+limit, len(data))]
+		chunk := data[i:Min(i+limit, len(data))]
 		channels[iteratoraux] = make(chan Recurso)
 		go convertThread(chunk, channels[iteratoraux])
 		iteratoraux++
