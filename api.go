@@ -1,16 +1,16 @@
 package main
 
 import (
-	m "TA2-GO-API/reader"
+	cl "TA2-GO-API/data"
+	knn "TA2-GO-API/knn"
+	reader "TA2-GO-API/reader"
 	"encoding/json"
 	"io"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 )
-
-var recursos []m.Recurso
-var regiones, provincias, distritos, categorias, tipo_categorias, sub_tipo_categorias []string
 
 func listarRecursos(res http.ResponseWriter, req *http.Request) {
 	region := req.FormValue("region")
@@ -21,8 +21,13 @@ func listarRecursos(res http.ResponseWriter, req *http.Request) {
 	sub_tipo_categoria := req.FormValue("sub_tipo_categoria")
 	res.Header().Set("Content-Type", "application/json; charset=utf-8")
 	res.Header().Set("Access-Control-Allow-Origin", "*")
-	io.WriteString(res, "[")
-	for i, recurso := range recursos {
+	if region == "" && provincia == "" && distrito == "" && categoria == "" && tipo_categoria == "" && sub_tipo_categoria == "" {
+		jsonBytes, _ := json.MarshalIndent(cl.Recursos, "", " ")
+		io.WriteString(res, string(jsonBytes))
+		return
+	}
+	var response []cl.Recurso
+	for _, recurso := range cl.Recursos {
 		if !strings.EqualFold(recurso.REGIÓN, region) && region != "" {
 			continue
 		}
@@ -41,55 +46,61 @@ func listarRecursos(res http.ResponseWriter, req *http.Request) {
 		if !strings.EqualFold(recurso.Sub_tipo_Categoria, sub_tipo_categoria) && sub_tipo_categoria != "" {
 			continue
 		}
-		jsonBytes, _ := json.MarshalIndent(recurso, "", " ")
-		io.WriteString(res, string(jsonBytes))
-		if i != len(recursos)-1 {
-			io.WriteString(res, ",")
-		}
+		response = append(response, recurso)
 	}
-	io.WriteString(res, "]")
+	jsonBytes, _ := json.MarshalIndent(response, "", " ")
+	io.WriteString(res, string(jsonBytes))
 }
 
 func listarRegiones(res http.ResponseWriter, req *http.Request) {
 	res.Header().Set("Content-Type", "application/json; charset=utf-8")
 	res.Header().Set("Access-Control-Allow-Origin", "*")
-	jsonBytes, _ := json.MarshalIndent(regiones, "", " ")
+	jsonBytes, _ := json.MarshalIndent(cl.Regiones, "", " ")
 	io.WriteString(res, string(jsonBytes))
 }
 
 func listarProvincias(res http.ResponseWriter, req *http.Request) {
 	res.Header().Set("Content-Type", "application/json; charset=utf-8")
 	res.Header().Set("Access-Control-Allow-Origin", "*")
-	jsonBytes, _ := json.MarshalIndent(provincias, "", " ")
+	jsonBytes, _ := json.MarshalIndent(cl.Provincias, "", " ")
 	io.WriteString(res, string(jsonBytes))
 }
 
 func listarDistritos(res http.ResponseWriter, req *http.Request) {
 	res.Header().Set("Content-Type", "application/json; charset=utf-8")
 	res.Header().Set("Access-Control-Allow-Origin", "*")
-	jsonBytes, _ := json.MarshalIndent(distritos, "", " ")
+	jsonBytes, _ := json.MarshalIndent(cl.Distritos, "", " ")
 	io.WriteString(res, string(jsonBytes))
 }
 func listarCategorias(res http.ResponseWriter, req *http.Request) {
 	res.Header().Set("Content-Type", "application/json; charset=utf-8")
 	res.Header().Set("Access-Control-Allow-Origin", "*")
-	jsonBytes, _ := json.MarshalIndent(categorias, "", " ")
+	jsonBytes, _ := json.MarshalIndent(cl.Categorias, "", " ")
 	io.WriteString(res, string(jsonBytes))
 }
 func listarTipoCategorias(res http.ResponseWriter, req *http.Request) {
 	res.Header().Set("Content-Type", "application/json; charset=utf-8")
 	res.Header().Set("Access-Control-Allow-Origin", "*")
-	jsonBytes, _ := json.MarshalIndent(tipo_categorias, "", " ")
+	jsonBytes, _ := json.MarshalIndent(cl.Tipo_categorias, "", " ")
 	io.WriteString(res, string(jsonBytes))
 }
 func listarSubTipoCategorias(res http.ResponseWriter, req *http.Request) {
 	res.Header().Set("Content-Type", "application/json; charset=utf-8")
 	res.Header().Set("Access-Control-Allow-Origin", "*")
-	jsonBytes, _ := json.MarshalIndent(sub_tipo_categorias, "", " ")
+	jsonBytes, _ := json.MarshalIndent(cl.Sub_tipo_categorias, "", " ")
 	io.WriteString(res, string(jsonBytes))
 }
-
-//->Mapa LATITUD,LONGITUD
+func knnEnpoint(res http.ResponseWriter, req *http.Request) {
+	param := req.FormValue("k")
+	if param == "" {
+		return
+	}
+	k, _ := strconv.Atoi(param)
+	res.Header().Set("Content-Type", "application/json; charset=utf-8")
+	res.Header().Set("Access-Control-Allow-Origin", "*")
+	jsonBytes, _ := json.MarshalIndent(knn.Knn(k), "", " ")
+	io.WriteString(res, string(jsonBytes))
+}
 func handleRequest() {
 	http.HandleFunc("/listar", listarRecursos)
 	http.HandleFunc("/regiones", listarRegiones)
@@ -98,29 +109,12 @@ func handleRequest() {
 	http.HandleFunc("/categorias", listarCategorias)
 	http.HandleFunc("/tipo_categorias", listarTipoCategorias)
 	http.HandleFunc("/sub_tipo_categorias", listarSubTipoCategorias)
+	http.HandleFunc("/knn", knnEnpoint)
 	log.Fatal(http.ListenAndServe(":80", nil))
 }
 
-func appendIfMissing(strs []string, str string) []string {
-	for _, aux := range strs {
-		if aux == str {
-			return strs
-		}
-	}
-	return append(strs, str)
-}
-func getUniqueValues() {
-	for _, recurso := range recursos {
-		regiones = appendIfMissing(regiones, recurso.REGIÓN)
-		provincias = appendIfMissing(provincias, recurso.PROVINCIA)
-		distritos = appendIfMissing(distritos, recurso.DISTRITO)
-		categorias = appendIfMissing(categorias, recurso.CATEGORIA)
-		tipo_categorias = appendIfMissing(tipo_categorias, recurso.Tipo_de_Categoria)
-		sub_tipo_categorias = appendIfMissing(sub_tipo_categorias, recurso.Sub_tipo_Categoria)
-	}
-}
 func main() {
-	recursos = m.LoadRecursos()
-	getUniqueValues()
+	cl.Recursos = reader.LoadRecursos()
+	knn.GetUniqueValues()
 	handleRequest()
 }

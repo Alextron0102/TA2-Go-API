@@ -37,7 +37,7 @@
         maxZoom: 18
         }).addTo(mymap);
         let rb;
-        fetch('http://localhost:80/listar')
+        fetch('http://localhost/listar')
         .then(response => response.json())
         .then(body => {
           let keys = Object.keys(body[0]);

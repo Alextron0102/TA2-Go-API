@@ -5,6 +5,7 @@ package reader
 
 import (
 	//"bufio"
+	cl "TA2-GO-API/data"
 	"encoding/csv"
 	"fmt"
 	"log"
@@ -12,24 +13,6 @@ import (
 	"strconv"
 	"strings"
 )
-
-const (
-	NUM_CPU = 4
-)
-
-type Recurso struct {
-	REGIÓN             string
-	PROVINCIA          string
-	DISTRITO           string
-	Codigo_del_Recurso int
-	Nombre_del_Recurso string
-	CATEGORIA          string
-	Tipo_de_Categoria  string
-	Sub_tipo_Categoria string
-	URL                string
-	LATITUD            *float64
-	LONGITUD           *float64
-}
 
 func check(e error) {
 	if e != nil {
@@ -51,7 +34,7 @@ func readCSVFromUrl(url string) ([][]string, error) {
 	}
 	return data, nil
 }
-func convertThread(tuples [][]string, ch chan Recurso) {
+func convertThread(tuples [][]string, ch chan cl.Recurso) {
 	var latitud, longitud *float64 = new(float64), new(float64)
 	for _, value := range tuples {
 		codigo, err := strconv.Atoi(strings.Replace(strings.TrimSpace(value[3]), ",", "", -1))
@@ -70,7 +53,7 @@ func convertThread(tuples [][]string, ch chan Recurso) {
 		} else {
 			longitud = nil
 		}
-		recursosingle := Recurso{
+		recursosingle := cl.Recurso{
 			REGIÓN:             value[0],
 			PROVINCIA:          value[1],
 			DISTRITO:           value[2],
@@ -96,22 +79,22 @@ func Min(a, b int) int {
 	return b
 }
 
-func LoadRecursos() []Recurso {
+func LoadRecursos() []cl.Recurso {
 	data, err := readCSVFromUrl("https://raw.githubusercontent.com/Alextron0102/TA2-Go-API/main/files/Inventario_recursos_turisticos.csv")
 	//tuple, err := readData("./files/Inventario_recursos_turisticos.csv")
 	check(err)
-	channels := make([]chan Recurso, NUM_CPU+1)
-	limit := len(data) / NUM_CPU
+	channels := make([]chan cl.Recurso, cl.NUM_CPU+1)
+	limit := len(data) / cl.NUM_CPU
 	fmt.Print("lineas en total: ")
 	fmt.Println(len(data))
 	iteratoraux := 0
 	for i := 0; i < len(data); i += limit {
 		chunk := data[i:Min(i+limit, len(data))]
-		channels[iteratoraux] = make(chan Recurso)
+		channels[iteratoraux] = make(chan cl.Recurso)
 		go convertThread(chunk, channels[iteratoraux])
 		iteratoraux++
 	}
-	var recursos []Recurso
+	var recursos []cl.Recurso
 	for _, channel := range channels {
 		for recurso := range channel {
 			//PrintRecurso(recurso)
