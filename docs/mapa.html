@@ -372,8 +372,8 @@
       }
       function predecir() {
         document.getElementById('jsontable').innerHTML = "";
-        //fetch("response.json")
-        fetch("http:/localhost.com/knn?k="+k)
+        fetch("../responses/responseK"+k+".json")
+        //fetch("http:/localhost.com/knn?k="+k)
           .then((response) => {
             console.log("response reached!");
             return response.json();
@@ -458,7 +458,8 @@
       }
 
       function fetchDataToTable() {
-        fetch("http://localhost/listar")
+        fetch("../responses/listar.json")
+        //fetch("http://localhost/listar")
           .then((response) => {
             console.log("response reached!");
             return response.json();
