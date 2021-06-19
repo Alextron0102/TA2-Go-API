@@ -31,4 +31,4 @@ type RecursoKnn struct {
 	Sub_tipo_Categoria_predict string
 }
 
-var NUM_CPU = runtime.NumCPU()
+var NUM_CPU = runtime.NumCPU()-1

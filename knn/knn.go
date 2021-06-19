@@ -18,6 +18,7 @@ func distancia(rec1a, rec2a cl.Recurso) DistanciaSt {
 		distancia: math.Sqrt(math.Pow(*rec1a.LATITUD-*rec2a.LATITUD, 2) + math.Pow(*rec1a.LONGITUD-*rec2a.LONGITUD, 2)),
 	}
 }
+
 func getindicemayor(arr []int) int {
 	indice := 0
 	mayor := arr[indice]
@@ -71,15 +72,6 @@ func predictRecurso(origen cl.Recurso, k int, recursoKnn chan cl.RecursoKnn) {
 		frecuencias[4][searchindex(cl.Tipo_categorias, (*distancias[k].destino).Tipo_de_Categoria)]++
 		frecuencias[5][searchindex(cl.Sub_tipo_categorias, (*distancias[k].destino).Sub_tipo_Categoria)]++
 	}
-	//Ahora ordenamos los datos del arreglo de frecuencias:
-	for i := 0; i < k; i++ {
-		frecuencias[0][searchindex(cl.Regiones, (*distancias[k].destino).REGIÓN)]++
-		frecuencias[1][searchindex(cl.Provincias, (*distancias[k].destino).PROVINCIA)]++
-		frecuencias[2][searchindex(cl.Distritos, (*distancias[k].destino).DISTRITO)]++
-		frecuencias[3][searchindex(cl.Categorias, (*distancias[k].destino).CATEGORIA)]++
-		frecuencias[4][searchindex(cl.Tipo_categorias, (*distancias[k].destino).Tipo_de_Categoria)]++
-		frecuencias[5][searchindex(cl.Sub_tipo_categorias, (*distancias[k].destino).Sub_tipo_Categoria)]++
-	}
 	recursoKnn <- cl.RecursoKnn{
 		Recurso:                    &origen,
 		REGIÓN_predict:             cl.Regiones[getindicemayor(frecuencias[0])],
@@ -100,7 +92,7 @@ func Knn(k int) []cl.RecursoKnn {
 	}
 	channel := make(chan cl.RecursoKnn)
 	//creamos canales para llenar la matriz
-	cant:=0
+	cant := 0
 	for i := 0; i < len(cl.Recursos); i++ {
 		if cl.Recursos[i].LATITUD != nil && cl.Recursos[i].LONGITUD != nil {
 			go predictRecurso(cl.Recursos[i], k, channel)
@@ -112,7 +104,7 @@ func Knn(k int) []cl.RecursoKnn {
 	for recurso := range channel {
 		aux = append(aux, recurso)
 		cant--
-		if(cant==0){
+		if cant == 0 {
 			close(channel)
 		}
 	}
